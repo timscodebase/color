@@ -1,14 +1,14 @@
 <script lang="ts">
-	const fetchColors = (async () => {
-		const response = await fetch('https://api.sampleapis.com/csscolornames/colors');
-		return await response.json();
-	})();
+	import { onMount } from 'svelte';
+	import { colors } from './store';
 
-	const randomColor = async () => {
-		const data = await fetchColors;
-		const randomIndex: number = Math.floor(Math.random() * data.length);
-		return data[randomIndex].hex;
-	};
+	let randomColor: string;
+
+	onMount(async () => {
+		const response = await fetch('https://api.sampleapis.com/csscolornames/colors');
+		colors.set(await response.json());
+		randomColor = $colors[Math.floor(Math.random() * $colors.length)].hex;
+	});
 
 	let isCopied = false;
 
@@ -23,34 +23,26 @@
 			console.error('Failed to copy!', err);
 		}
 	};
+
+	console.log('colors', $colors);
 </script>
 
-{#await randomColor()}
-	<div>loading...</div>
-{:then color}
-	<header style="--backgroundColor: {color}">
-		<h1>Colors</h1>
-	</header>
-{/await}
+<header style="--backgroundColor: {randomColor}">
+	<h1>Colors</h1>
+</header>
 
-{#await fetchColors}
-	<p>loading...</p>
-{:then colors}
-	<div class="grid">
-		{#each colors as color}
-			<div
-				class="color"
-				data-hover={isCopied ? 'Copied!' : 'Copy'}
-				style="--backgroundColor: {color.hex}"
-				on:click={() => handleClick(color.hex)}
-			>
-				<div class="name">{color.name} | {color.hex}</div>
-			</div>
-		{/each}
-	</div>
-{:catch error}
-	<p>{error.message}</p>
-{/await}
+<div class="grid">
+	{#each $colors as color}
+		<div
+			class="color"
+			data-hover={isCopied ? 'Copied!' : 'Copy'}
+			style="--backgroundColor: {color.hex}"
+			on:click={() => handleClick(color.hex)}
+		>
+			<div class="name">{color.name} | {color.hex}</div>
+		</div>
+	{/each}
+</div>
 
 <style global>
 	html {
@@ -91,7 +83,6 @@
 	textarea {
 		white-space: revert;
 	}
-
 	:root {
 		--padding: max(1rem, 2vw);
 	}
